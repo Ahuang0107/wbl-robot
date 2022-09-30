@@ -1,51 +1,81 @@
-use rust_demo::{cookies, env_get};
+mod global;
+mod response;
+mod url;
+
+use crate::global::GlobalData;
+use crate::response::{CustomResponse, IterationData, StartData};
+use crate::url::{iteration_url, start_url};
 use std::error::Error;
+use std::fs::File;
+use std::io::Write;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let quiz_id = env_get("QUIZ_ID").expect("unable to find [QUIZ_ID] in .env file");
-    let cookie = env_get("COOKIE").expect("unable to find [COOKIE] in .env file");
-    let csrf_token = env_get("CSRF_TOKEN").expect("unable to find [CSRF_TOKEN] in .env file");
-
-    let cookies = cookies(cookie);
-    let student_component_id = cookies
-        .get("PSA_STUD_CPNT_ID")
-        .expect("can not find [PSA_STUD_CPNT_ID] in coolies");
-    let module_id = cookies
-        .get("PSA_STUD_CPNT_MOD_ID")
-        .expect("can not find [PSA_STUD_CPNT_MOD_ID] in coolies");
-    let example = "https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/940fa94e-da49-4efa-9b9f-751fa346f357/iteration?studentComponentID=32729100&moduleID=669142&generateIteration=true";
-    let base_url = "https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz";
-    let url = base_url.to_string()
-        + "/"
-        + quiz_id
-        + "/"
-        + "iteration"
-        + "?"
-        + "studentComponentID"
-        + "="
-        + student_component_id
-        + "&"
-        + "moduleID"
-        + "="
-        + module_id
-        + "&"
-        + "generateIteration"
-        + "="
-        + "true";
-    assert_eq!(example, url);
+    let mut global_data = GlobalData::from_env();
 
     let client = reqwest::Client::new();
     let res = client
-        .get(example)
-        .header("COOKIE", cookie)
-        .header("owasp_csrftoken", csrf_token)
+        .get(iteration_url(&global_data))
+        .header("COOKIE", global_data.cookie())
+        .header("owasp_csrftoken", global_data.csrf_token())
         .send()
         .await?;
-    println!("Status: {}", res.status());
-    println!("Headers:\n{:#?}", res.headers());
 
-    let body = res.text().await?;
-    println!("Body:\n{}", body);
+    if res.status().is_success() {
+        let body = res.text().await?;
+        let mut file =
+            File::create("temp/iteration.json").expect("unable to create file temp/iteration.json");
+        file.write(body.as_bytes())
+            .expect("unable to write file temp/iteration.json");
+        let response: CustomResponse<IterationData> = serde_json::from_str(&*body)?;
+        let rest_operation_status_vox = response.rest_operation_status_vox;
+        let status = rest_operation_status_vox.status;
+        if status == "SUCCESS" {
+            let data = rest_operation_status_vox.data;
+            let rest_return_data = data.rest_return_data;
+            let student_assessment_iteration = rest_return_data
+                .student_assessment_iteration
+                .expect("unable to get [student_assessment_iteration]");
+            let question_count = student_assessment_iteration.question_count;
+            println!("question_count:{question_count}");
+            let questions = student_assessment_iteration.questions;
+            questions.iter().for_each(|question| {
+                println!(
+                    "question_sys_guid:{}",
+                    question.student_assessment_question_sys_guid
+                );
+            });
+            global_data.set_student_guid(student_assessment_iteration.student_assessment_sys_guid);
+
+            let first = questions
+                .first()
+                .unwrap()
+                .student_assessment_question_sys_guid
+                .clone();
+            let res = client
+                .get(start_url(&global_data, first))
+                .header("COOKIE", global_data.cookie())
+                .header("owasp_csrftoken", global_data.csrf_token())
+                .send()
+                .await?;
+
+            if res.status().is_success() {
+                let body = res.text().await?;
+                let mut file = File::create("temp/start.json")
+                    .expect("unable to create file temp/iteration.json");
+                file.write(body.as_bytes())
+                    .expect("unable to write file temp/iteration.json");
+                let response: CustomResponse<StartData> = serde_json::from_str(&*body)?;
+                let rest_operation_status_vox = response.rest_operation_status_vox;
+                let status = rest_operation_status_vox.status;
+                if status == "SUCCESS" {
+                    let data = rest_operation_status_vox.data;
+                    let rest_return_data = data.rest_return_data;
+                    println!("{}", rest_return_data.question_id);
+                }
+            }
+        }
+    }
+
     Ok(())
 }
