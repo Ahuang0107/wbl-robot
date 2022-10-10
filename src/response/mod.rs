@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 #[allow(dead_code)]
-async fn get_res_data<'a, T: Deserialize<'a>>(body: &'a String) -> Result<T, Box<dyn Error>> {
-    let response: CustomResponse<T> = serde_json::from_str(&body)?;
+async fn get_res_data<'a, T: Deserialize<'a>>(body: &'a str) -> Result<T, Box<dyn Error>> {
+    let response: CustomResponse<T> = serde_json::from_str(body)?;
     let rest_operation_status_vox = response.rest_operation_status_vox;
     let status = rest_operation_status_vox.status;
     if status == "SUCCESS" {
@@ -37,7 +37,7 @@ pub struct Data<T> {
 }
 
 /// Iteration 接口返回的数据结构
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct IterationData {
     // has_assessment_iteration: bool,
     // selected_locale_id: String,
@@ -47,11 +47,11 @@ pub struct IterationData {
     // formatted_exam_duration: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct StudentAssessmentIteration {
     // passing_grade: u8,
     #[serde(rename = "questionCount")]
-    pub(crate) question_count: u8,
+    pub(crate) question_count: usize,
     pub(crate) questions: Vec<Question>,
     #[serde(rename = "studentAssessmentSysGUID")]
     pub(crate) student_assessment_sys_guid: String,
@@ -61,7 +61,7 @@ pub struct StudentAssessmentIteration {
     pub(crate) quiz_sys_guid: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Question {
     #[serde(rename = "studentAssessmentQuestionSysGUID")]
     pub(crate) student_assessment_question_sys_guid: String,
@@ -72,21 +72,29 @@ pub struct Question {
 pub struct StartData {
     #[serde(rename = "questionID")]
     pub(crate) question_id: String,
-    #[serde(rename = "questionSysGUID")]
-    pub(crate) question_sys_guid: String,
+    // #[serde(rename = "questionSysGUID")]
+    // pub(crate) question_sys_guid: String,
     #[serde(rename = "answerChoices")]
     pub(crate) answer_choices: Vec<AnswerChoice>,
     pub(crate) format: QuestionFormat,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum QuestionFormat {
-    #[serde(rename = "questionID")]
+    #[serde(rename = "MULTI_CHOICE_SINGLE_ANSWER")]
     MultiChoiceSingleAnswer,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct AnswerChoice {
     #[serde(rename = "answerSysGUID")]
     pub(crate) answer_sys_guid: String,
+    #[serde(rename = "choiceValue")]
+    pub(crate) choice_value: String,
+}
+
+/// submit 接口返回的数据结构
+#[derive(Serialize, Deserialize)]
+pub struct SubmitData {
+    pub(crate) score: usize,
 }

@@ -32,6 +32,30 @@ pub fn start_url(global_data: &GlobalData, question_guid: String) -> String {
         + &*question_guid
 }
 
+pub fn save_url(global_data: &GlobalData, question_guid: String) -> String {
+    let base_url = "https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz";
+    base_url.to_string()
+        + "/"
+        + global_data.quiz_id()
+        + "/iteration/"
+        + global_data.student_guid()
+        + "/question/"
+        + &*question_guid
+        + "/saveAndNext"
+}
+
+pub fn submit_url(global_data: &GlobalData, question_guid: String) -> String {
+    let base_url = "https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz";
+    base_url.to_string()
+        + "/"
+        + global_data.quiz_id()
+        + "/iteration/"
+        + global_data.student_guid()
+        + "/question/"
+        + &*question_guid
+        + "/saveAndSubmit"
+}
+
 fn url_queries(queries: HashMap<String, String>) -> String {
     let a = queries
         .iter()

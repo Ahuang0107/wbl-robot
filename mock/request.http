@@ -1,0 +1,50 @@
+### currentUserPreferences
+GET https://eygsl.plateau.com/learning/user/api/v2/i18n/currentUserPreferences
+Cookie: {{cookie}}
+owasp_csrftoken:{{token}}
+
+### iteration
+GET https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration?studentComponentID=35792014&moduleID=653819&generateIteration=true
+Cookie: {{cookie}}
+owasp_csrftoken:{{token}}
+
+### start
+GET https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/7840ff9c-faba-49d1-a32f-de6c9091fd81?localeID=English
+Cookie: {{cookie}}
+owasp_csrftoken:{{token}}
+
+### saveAndNext
+PUT https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/7840ff9c-faba-49d1-a32f-de6c9091fd81/saveAndNext?localeID=English
+Accept: application/json
+Cookie: {{cookie}}
+owasp_csrftoken:{{token}}
+Content-Type: application/json
+x-requested-with: XMLHttpRequest, OWASP CSRFGuard Project
+
+{
+  "score": true,
+  "studentAnswers": [
+    {
+      "answerSysGUID": "920d3431-d296-4cc7-ac9d-4b26e1b2e209"
+    }
+  ],
+  "nextStudentAssessmentQuestionSysGUID": "21bb3c4c-f55e-40db-8aa1-f56b31498792"
+}
+
+### saveAndNext
+PUT https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/5adde888-af44-47aa-9ac6-d585b546b35a/saveAndNext?localeID=English
+Accept: application/json
+Cookie: {{cookie}}
+owasp_csrftoken:{{token}}
+Content-Type: application/json
+x-requested-with: XMLHttpRequest, OWASP CSRFGuard Project
+
+{
+  "score": true,
+  "studentAnswers": [
+    {
+      "answerSysGUID": "5f0ad18e-a179-4ed2-8752-04d126365f04"
+    }
+  ],
+  "nextStudentAssessmentQuestionSysGUID": "cef67e9e-ca9e-4bf0-8827-3d137610549f"
+}
