@@ -4,6 +4,7 @@ use std::error::Error;
 use mongodb::bson::doc;
 use mongodb::Collection;
 use rand::seq::SliceRandom;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use wbl_robot::{cookies, env_get};
@@ -27,8 +28,10 @@ pub struct MemoryStoreQuestion {
     choices: Vec<AnswerChoice>,
     // 已知的正确选项
     correct_choices: Vec<AnswerChoice>,
-    // 已知的错误选线
+    // 已知的错误选项
     error_choices: Vec<AnswerChoice>,
+    // 已知的多选题的错误选项
+    multiple_error_choices: Vec<Vec<AnswerChoice>>,
     // 本次选择的选项
     chosen_choices: Vec<AnswerChoice>,
 }
@@ -58,6 +61,85 @@ impl MemoryStoreQuestion {
             .expect("process error, have not choices left")
             .clone()
     }
+    /// 随机从所有choices里返回若干个
+    #[allow(dead_code)]
+    fn random_choices(&self) -> Vec<AnswerChoice> {
+        let len = self.choices.len();
+        let mut result = self
+            .choices
+            .clone()
+            .choose_multiple(&mut rand::thread_rng(), get_random(len))
+            .cloned()
+            .collect::<Vec<AnswerChoice>>();
+        let mut same = false;
+        self.multiple_error_choices.iter().for_each(|m| {
+            if !same {
+                if compare_multiple_choices(m, &result) {
+                    same = true;
+                }
+            }
+        });
+
+        while same {
+            same = false;
+            result = self
+                .choices
+                .clone()
+                .choose_multiple(&mut rand::thread_rng(), get_random(len))
+                .cloned()
+                .collect::<Vec<AnswerChoice>>();
+            self.multiple_error_choices.iter().for_each(|m| {
+                if !same {
+                    if compare_multiple_choices(m, &result) {
+                        same = true;
+                    }
+                }
+            });
+        }
+
+        result
+    }
+}
+
+/// 比较两个多选题选择的选项是否相同
+#[allow(dead_code)]
+fn compare_multiple_choices(a: &Vec<AnswerChoice>, b: &Vec<AnswerChoice>) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let b_values = b
+        .iter()
+        .map(|c| c.choice_value.clone())
+        .collect::<Vec<String>>();
+    let mut same = true;
+    a.iter().for_each(|c| {
+        if !b_values.contains(&c.choice_value) {
+            same = false;
+        }
+    });
+    same
+}
+
+/// 得到1-max之间随机的一个整数，包含1和max
+#[allow(dead_code)]
+fn get_random(max: usize) -> usize {
+    let mut rng = rand::thread_rng();
+    let index = rng.gen::<usize>();
+    let mut result = index % max;
+    if result == 0 {
+        result = max;
+    }
+    result
+}
+
+/// 得到有v个选项时，选项组合的数量
+#[allow(dead_code)]
+fn get_combination_count(v: usize) -> usize {
+    let result = 0;
+    for _ in 1..=v {
+        todo!("计算Cv_的结果加总")
+    }
+    result
 }
 
 impl GlobalData {
@@ -109,6 +191,7 @@ impl GlobalData {
             choices: Vec::new(),
             correct_choices: Vec::new(),
             error_choices: Vec::new(),
+            multiple_error_choices: Vec::new(),
             chosen_choices: Vec::new(),
         })
     }
@@ -190,7 +273,7 @@ impl GlobalData {
                     question.chosen_choices.push(question.random_choice());
                 }
                 QuestionFormat::MultiChoiceMultipleAnswer => {
-                    todo!("处理多选题的逻辑")
+                    question.chosen_choices = question.random_choices();
                 }
             }
         }
@@ -239,10 +322,11 @@ impl GlobalData {
                             .for_each(|cq| q.error_choices.push(cq.clone()));
                         if q.excluded_errors().len() == 1 {
                             q.correct_choices = q.excluded_errors();
+                            // todo 统计得到全部可能的选项数量，当error的记录已经跟全部可能只差一时，则可以得到剩下就是正确选项
                         }
                     }
                     QuestionFormat::MultiChoiceMultipleAnswer => {
-                        todo!("处理多选题的逻辑")
+                        q.multiple_error_choices.push(q.chosen_choices.clone());
                     }
                 }
             }
@@ -279,6 +363,7 @@ impl GlobalData {
 
 #[cfg(test)]
 mod tests {
+    use crate::global::{compare_multiple_choices, get_combination_count, get_random};
     use crate::response::{AnswerChoice, QuestionFormat};
     use crate::MemoryStoreQuestion;
 
@@ -296,6 +381,7 @@ mod tests {
             ],
             correct_choices: Vec::new(),
             error_choices: Vec::new(),
+            multiple_error_choices: Vec::new(),
             chosen_choices: Vec::new(),
         };
         let random_choice = question.random_choice().choice_value;
@@ -323,5 +409,132 @@ mod tests {
         question.error_choices.push(AnswerChoice::from_mock("3"));
         let random_choice = question.random_choice().choice_value;
         assert_eq!(random_choice == String::from("4"), true);
+    }
+
+    #[test]
+    fn get_random_test() {
+        for _ in 0..50 {
+            let random = get_random(5);
+            assert_eq!(
+                random == 1 || random == 2 || random == 3 || random == 4 || random == 5,
+                true
+            );
+        }
+    }
+
+    #[test]
+    fn compare_multiple_choices_test() {
+        let mut a = vec![AnswerChoice::from_mock("1")];
+        let mut b = vec![AnswerChoice::from_mock("1")];
+        assert_eq!(compare_multiple_choices(&a, &b), true);
+        a.clear();
+        assert_eq!(compare_multiple_choices(&a, &b), false);
+        b.clear();
+        assert_eq!(compare_multiple_choices(&a, &b), true);
+        a.push(AnswerChoice::from_mock("1"));
+        a.push(AnswerChoice::from_mock("2"));
+        b.push(AnswerChoice::from_mock("1"));
+        assert_eq!(compare_multiple_choices(&a, &b), false);
+        b.push(AnswerChoice::from_mock("2"));
+        assert_eq!(compare_multiple_choices(&a, &b), true);
+    }
+
+    #[test]
+    fn random_choices_test() {
+        let mut question = MemoryStoreQuestion {
+            useful_id: String::from(""),
+            temp_id: String::from(""),
+            format: QuestionFormat::MultiChoiceSingleAnswer,
+            choices: vec![
+                AnswerChoice::from_mock("1"),
+                AnswerChoice::from_mock("2"),
+                AnswerChoice::from_mock("3"),
+                AnswerChoice::from_mock("4"),
+            ],
+            correct_choices: Vec::new(),
+            error_choices: Vec::new(),
+            multiple_error_choices: Vec::new(),
+            chosen_choices: Vec::new(),
+        };
+        for _ in 0..50 {
+            let random_choices = question.random_choices();
+            assert_eq!(random_choices.len() > 0 && random_choices.len() < 5, true);
+        }
+        question
+            .multiple_error_choices
+            .push(vec![AnswerChoice::from_mock("1")]);
+        question
+            .multiple_error_choices
+            .push(vec![AnswerChoice::from_mock("2")]);
+        question
+            .multiple_error_choices
+            .push(vec![AnswerChoice::from_mock("3")]);
+        question
+            .multiple_error_choices
+            .push(vec![AnswerChoice::from_mock("4")]);
+        for _ in 0..50 {
+            let random_choices = question.random_choices();
+            assert_eq!(random_choices.len() > 1 && random_choices.len() < 5, true);
+        }
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("1"),
+            AnswerChoice::from_mock("2"),
+        ]);
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("1"),
+            AnswerChoice::from_mock("3"),
+        ]);
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("1"),
+            AnswerChoice::from_mock("4"),
+        ]);
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("2"),
+            AnswerChoice::from_mock("3"),
+        ]);
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("2"),
+            AnswerChoice::from_mock("4"),
+        ]);
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("3"),
+            AnswerChoice::from_mock("4"),
+        ]);
+        for _ in 0..50 {
+            let random_choices = question.random_choices();
+            assert_eq!(random_choices.len() > 2 && random_choices.len() < 5, true);
+        }
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("1"),
+            AnswerChoice::from_mock("2"),
+            AnswerChoice::from_mock("3"),
+        ]);
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("1"),
+            AnswerChoice::from_mock("2"),
+            AnswerChoice::from_mock("4"),
+        ]);
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("1"),
+            AnswerChoice::from_mock("3"),
+            AnswerChoice::from_mock("4"),
+        ]);
+        question.multiple_error_choices.push(vec![
+            AnswerChoice::from_mock("2"),
+            AnswerChoice::from_mock("3"),
+            AnswerChoice::from_mock("4"),
+        ]);
+        for _ in 0..50 {
+            let random_choices = question.random_choices();
+            assert_eq!(random_choices.len() == 4, true);
+        }
+    }
+
+    #[test]
+    fn get_combination_count_test() {
+        // assert_eq!(get_combination_count(1), 1);
+        // assert_eq!(get_combination_count(2), 3);
+        // assert_eq!(get_combination_count(3), 6);
+        // assert_eq!(get_combination_count(4), 16);
     }
 }
