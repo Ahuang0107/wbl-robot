@@ -9,12 +9,12 @@ Cookie: {{cookie}}
 owasp_csrftoken:{{token}}
 
 ### start
-GET https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/7840ff9c-faba-49d1-a32f-de6c9091fd81?localeID=English
+GET https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/69d37cc0-acc0-40d7-bf68-d35ccadd5208?localeID=English
 Cookie: {{cookie}}
 owasp_csrftoken:{{token}}
 
 ### saveAndNext
-PUT https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/7840ff9c-faba-49d1-a32f-de6c9091fd81/saveAndNext?localeID=English
+PUT https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/69d37cc0-acc0-40d7-bf68-d35ccadd5208/saveAndNext?localeID=English
 Accept: application/json
 Cookie: {{cookie}}
 owasp_csrftoken:{{token}}
@@ -25,14 +25,41 @@ x-requested-with: XMLHttpRequest, OWASP CSRFGuard Project
   "score": true,
   "studentAnswers": [
     {
-      "answerSysGUID": "920d3431-d296-4cc7-ac9d-4b26e1b2e209"
+      "answerSysGUID": "998f934b-a7ed-4b5e-a262-ae6705c3c971",
+      "groupNumber": 0,
+      "isArchived": false,
+      "isCorrect": null,
+      "isPrimary": false,
+      "lastUpdateUser": "2417857",
+      "lastUpdateTimestamp": 1589217233122,
+      "number": 0,
+      "questionVariantSysGUID": "73bf879c-110d-44cb-861f-d8ccc9ce2023",
+      "defaultImageID": null,
+      "answerI18nDetailSysGUID": "7f674e6d-737d-48b0-8426-37c73d449b58",
+      "choiceValue": "Allows us to perform substantive procedures later in the audit",
+      "defaultImageFileName": null,
+      "defaultImageSize": null,
+      "i18nDetailLastUpdateUser": "2417857",
+      "i18nDetailLastUpdateTimestamp": 1589217233122,
+      "imageFileName": null,
+      "imageSize": null,
+      "localeID": "English",
+      "questionVersionSysGUID": "c241b626-917f-45be-bd3b-80a98db9b277",
+      "imageID": null,
+      "imageAltText": null,
+      "answerI18nSysGUID": "7f674e6d-737d-48b0-8426-37c73d449b58",
+      "isSelected": true,
+      "order": null,
+      "studentAssessmentAnswerChoiceSysGUID": null,
+      "studentAssessmentQuestionSysGUID": "69d37cc0-acc0-40d7-bf68-d35ccadd5208",
+      "value": null
     }
   ],
-  "nextStudentAssessmentQuestionSysGUID": "21bb3c4c-f55e-40db-8aa1-f56b31498792"
+  "nextStudentAssessmentQuestionSysGUID": "eec545fa-842b-416c-82fc-7807fd447e43"
 }
 
 ### saveAndNext
-PUT https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/5adde888-af44-47aa-9ac6-d585b546b35a/saveAndNext?localeID=English
+PUT https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/eec545fa-842b-416c-82fc-7807fd447e43/saveAndNext?localeID=English
 Accept: application/json
 Cookie: {{cookie}}
 owasp_csrftoken:{{token}}
@@ -43,8 +70,124 @@ x-requested-with: XMLHttpRequest, OWASP CSRFGuard Project
   "score": true,
   "studentAnswers": [
     {
-      "answerSysGUID": "5f0ad18e-a179-4ed2-8752-04d126365f04"
+      "answerSysGUID": "84655842-30e8-4021-91e2-50c23da24f9e",
+      "groupNumber": 0,
+      "isArchived": false,
+      "isCorrect": null,
+      "isPrimary": false,
+      "lastUpdateUser": "2417857",
+      "lastUpdateTimestamp": 1589217232773,
+      "number": 0,
+      "questionVariantSysGUID": "3362abac-4535-4774-b8b1-9e53fad5d9a9",
+      "defaultImageID": null,
+      "answerI18nDetailSysGUID": "c2d1e315-45e7-46fc-a07c-cc1dbd712fcb",
+      "choiceValue": "Inherent risks",
+      "defaultImageFileName": null,
+      "defaultImageSize": null,
+      "i18nDetailLastUpdateUser": "2417857",
+      "i18nDetailLastUpdateTimestamp": 1589217232773,
+      "imageFileName": null,
+      "imageSize": null,
+      "localeID": "English",
+      "questionVersionSysGUID": "fee0bd92-b3cb-45b3-a006-e4ccb0a3b0be",
+      "imageID": null,
+      "imageAltText": null,
+      "answerI18nSysGUID": "c2d1e315-45e7-46fc-a07c-cc1dbd712fcb",
+      "isSelected": true,
+      "order": null,
+      "studentAssessmentAnswerChoiceSysGUID": null,
+      "studentAssessmentQuestionSysGUID": "eec545fa-842b-416c-82fc-7807fd447e43",
+      "value": null
     }
   ],
-  "nextStudentAssessmentQuestionSysGUID": "cef67e9e-ca9e-4bf0-8827-3d137610549f"
+  "nextStudentAssessmentQuestionSysGUID": "183ea11f-cc26-4f5c-a3af-081b8b88784d"
+}
+
+### saveAndNext
+PUT https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/183ea11f-cc26-4f5c-a3af-081b8b88784d/saveAndNext?localeID=English
+Accept: application/json
+Cookie: {{cookie}}
+owasp_csrftoken:{{token}}
+Content-Type: application/json
+x-requested-with: XMLHttpRequest, OWASP CSRFGuard Project
+
+{
+  "score": true,
+  "studentAnswers": [
+    {
+      "answerSysGUID": "e8502083-b2ef-4108-8180-d0afe0fa92d0",
+      "groupNumber": 0,
+      "isArchived": false,
+      "isCorrect": null,
+      "isPrimary": false,
+      "lastUpdateUser": "2417857",
+      "lastUpdateTimestamp": 1589217232922,
+      "number": 0,
+      "questionVariantSysGUID": "a967bffc-91f4-4f93-8dab-3c4a5071b734",
+      "defaultImageID": null,
+      "answerI18nDetailSysGUID": "13080963-a798-4f58-9a2b-8a99197bbba1",
+      "choiceValue": "Does the entity consider the risk factor in the preparation of their financial statements?",
+      "defaultImageFileName": null,
+      "defaultImageSize": null,
+      "i18nDetailLastUpdateUser": "2417857",
+      "i18nDetailLastUpdateTimestamp": 1589217232922,
+      "imageFileName": null,
+      "imageSize": null,
+      "localeID": "English",
+      "questionVersionSysGUID": "fc59fb31-88cf-4104-abb1-b06d253c6150",
+      "imageID": null,
+      "imageAltText": null,
+      "answerI18nSysGUID": "13080963-a798-4f58-9a2b-8a99197bbba1",
+      "isSelected": true,
+      "order": null,
+      "studentAssessmentAnswerChoiceSysGUID": null,
+      "studentAssessmentQuestionSysGUID": "183ea11f-cc26-4f5c-a3af-081b8b88784d",
+      "value": null
+    }
+  ],
+  "nextStudentAssessmentQuestionSysGUID": "5f48a315-a0d6-4ce9-9b5a-7697a9c3b90b"
+}
+
+### saveAndSubmit
+PUT https://eygsl.plateau.com/learning/user/api/v1/current-user/quiz/82f931a4-b474-4da3-9e6f-a081183e305a/iteration/0fffb7f4-4fd2-4a14-9fc7-79cb87845cc8/question/5f48a315-a0d6-4ce9-9b5a-7697a9c3b90b/saveAndSubmit?localeID=English
+Accept: application/json
+Cookie: {{cookie}}
+owasp_csrftoken:{{token}}
+Content-Type: application/json
+x-requested-with: XMLHttpRequest, OWASP CSRFGuard Project
+
+{
+  "score": true,
+  "studentAnswers": [
+    {
+      "answerSysGUID": "a202eb2f-f595-4ae3-9a45-5e6e784cf74f",
+      "groupNumber": 0,
+      "isArchived": false,
+      "isCorrect": null,
+      "isPrimary": false,
+      "lastUpdateUser": "2417857",
+      "lastUpdateTimestamp": 1589217233235,
+      "number": 0,
+      "questionVariantSysGUID": "ee55566f-ac3b-44b6-86df-1ea4254c917e",
+      "defaultImageID": null,
+      "answerI18nDetailSysGUID": "b553eff0-fe4f-483a-a38f-67641fd9d1ca",
+      "choiceValue": "When the inherent risk assessment for a relevant assertion is higher, we consider whether any of the inherent risks related to that assertion, either individually or in the aggregate, represent a significant risk",
+      "defaultImageFileName": null,
+      "defaultImageSize": null,
+      "i18nDetailLastUpdateUser": "2417857",
+      "i18nDetailLastUpdateTimestamp": 1589217233235,
+      "imageFileName": null,
+      "imageSize": null,
+      "localeID": "English",
+      "questionVersionSysGUID": "4b1c9028-e59c-4a8e-b9c7-52e16c56be35",
+      "imageID": null,
+      "imageAltText": null,
+      "answerI18nSysGUID": "b553eff0-fe4f-483a-a38f-67641fd9d1ca",
+      "isSelected": true,
+      "order": null,
+      "studentAssessmentAnswerChoiceSysGUID": null,
+      "studentAssessmentQuestionSysGUID": "5f48a315-a0d6-4ce9-9b5a-7697a9c3b90b",
+      "value": null
+    }
+  ]
 }

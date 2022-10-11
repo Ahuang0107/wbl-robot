@@ -1,7 +1,10 @@
 use crate::response::{AnswerChoice, QuestionFormat};
+use mongodb::bson::doc;
+use mongodb::Collection;
 use rust_demo::{cookies, env_get};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::error::Error;
 
 pub struct GlobalData {
     quiz_id: String,
@@ -18,6 +21,12 @@ pub struct MemoryStoreQuestion {
     pub temp_id: String,
     format: QuestionFormat,
     choices: Vec<AnswerChoice>,
+    // 已知的正确选项
+    correct_choices: Vec<AnswerChoice>,
+    // 已知的错误选线
+    error_choices: Vec<AnswerChoice>,
+    // 本次选择的选项
+    chosen_choices: Vec<AnswerChoice>,
 }
 
 impl GlobalData {
@@ -67,6 +76,9 @@ impl GlobalData {
             temp_id,
             format: QuestionFormat::MultiChoiceSingleAnswer,
             choices: Vec::new(),
+            correct_choices: Vec::new(),
+            error_choices: Vec::new(),
+            chosen_choices: Vec::new(),
         })
     }
 
@@ -87,23 +99,94 @@ impl GlobalData {
     }
 
     pub fn set_choices(&mut self, temp_id: String, choices: Vec<AnswerChoice>) {
-        self.questions
+        let question = self
+            .questions
             .iter_mut()
             .find(|q| q.temp_id == temp_id)
-            .expect("fail to find")
-            .choices = choices;
+            .expect("fail to find");
+        question.choices = choices;
+        question.choices.iter_mut().for_each(|q| {
+            q.is_selected = true;
+        });
     }
 
-    pub fn choice(&self, temp_id: String) -> Vec<AnswerChoice> {
-        vec![self
+    pub async fn update_from_db(
+        &mut self,
+        coll: &Collection<MemoryStoreQuestion>,
+        temp_id: String,
+    ) -> Result<(), Box<dyn Error>> {
+        let mut question = self
             .questions
+            .iter_mut()
+            .find(|q| q.temp_id == temp_id)
+            .expect("fail to find");
+        let db = coll
+            .find_one(doc! {"useful_id":question.useful_id.clone()}, None)
+            .await?;
+        match db {
+            Some(q) => {
+                question.correct_choices = q.correct_choices;
+                question.error_choices = q.error_choices;
+            }
+            None => {}
+        }
+        Ok(())
+    }
+
+    pub fn filter_choices(&mut self, temp_id: String) {
+        let question = self
+            .questions
+            .iter_mut()
+            .find(|q| q.temp_id == temp_id)
+            .expect("fail to find");
+        if !question.error_choices.is_empty() {
+            let mut error_ids: Vec<String> = Vec::new();
+            question.error_choices.iter().for_each(|q| {
+                error_ids.push(q.choice_value.clone());
+            });
+            question.choices = question
+                .choices
+                .clone()
+                .into_iter()
+                .filter(|q| error_ids.contains(&q.choice_value))
+                .collect::<Vec<AnswerChoice>>();
+        }
+    }
+
+    pub fn select_choices(&mut self, temp_id: String) {
+        let question = self
+            .questions
+            .iter_mut()
+            .find(|q| q.temp_id == temp_id)
+            .expect("fail to find");
+        if !question.correct_choices.is_empty() {
+            question.chosen_choices = question.correct_choices.clone();
+        } else {
+            match question.format {
+                QuestionFormat::MultiChoiceSingleAnswer => {
+                    question.chosen_choices.clear();
+                    question.chosen_choices.push(
+                        question
+                            .choices
+                            .first()
+                            .expect("have no choices can chose")
+                            .clone(),
+                    );
+                }
+                QuestionFormat::MultiChoiceMultipleAnswer => {
+                    todo!("处理多选题的逻辑")
+                }
+            }
+        }
+    }
+
+    pub fn chosen_choices(&self, temp_id: String) -> Vec<AnswerChoice> {
+        self.questions
             .iter()
             .find(|q| q.temp_id == temp_id)
             .expect("fail to find")
-            .choices
-            .first()
-            .expect("")
-            .clone()]
+            .chosen_choices
+            .clone()
     }
 
     pub fn question_count(&self) -> usize {
@@ -128,5 +211,43 @@ impl GlobalData {
 
     pub fn last_question(&self) -> String {
         self.questions.last().expect("fail").temp_id.clone()
+    }
+
+    pub fn remember_error(&mut self) {
+        self.questions.iter_mut().for_each(|q| {
+            if q.correct_choices.is_empty() {
+                match q.format {
+                    QuestionFormat::MultiChoiceSingleAnswer => {
+                        q.chosen_choices
+                            .iter()
+                            .for_each(|cq| q.error_choices.push(cq.clone()));
+                    }
+                    QuestionFormat::MultiChoiceMultipleAnswer => {
+                        todo!("处理多选题的逻辑")
+                    }
+                }
+            }
+        });
+    }
+
+    pub async fn store_into_db(
+        &self,
+        coll: &Collection<MemoryStoreQuestion>,
+    ) -> Result<(), Box<dyn Error>> {
+        for i in 0..self.question_count() {
+            let current = self.get_question(i);
+            let db = coll
+                .find_one(doc! {"useful_id":current.useful_id.clone()}, None)
+                .await?;
+            match db {
+                Some(_) => {
+                    coll.delete_one(doc! {"useful_id":current.useful_id.clone()}, None)
+                        .await?;
+                }
+                None => {}
+            }
+            coll.insert_one(current.clone(), None).await?;
+        }
+        Ok(())
     }
 }

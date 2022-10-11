@@ -44,12 +44,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     global_data.set_useful_id(global_data.first_question(), start_result.question_id);
     global_data.set_format(global_data.first_question(), start_result.format);
     global_data.set_choices(global_data.first_question(), start_result.answer_choices);
+    global_data
+        .update_from_db(&questions_collection, global_data.first_question())
+        .await?;
+    global_data.filter_choices(global_data.first_question());
 
     /*save and next*/
     for i in 0..global_data.question_count() - 1 {
         let current = global_data.get_question_id(i);
         let next = global_data.get_question_id(i + 1);
-        let body = SaveBody::from(global_data.choice(current.clone()), next.clone());
+        global_data.select_choices(current.clone());
+        let body = SaveBody::from(global_data.chosen_choices(current.clone()), next.clone());
         println!("do saveAndNext {}", current.clone());
         let save_result = save_request(&client, current.clone(), &global_data, &body)
             .await
@@ -57,12 +62,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         global_data.set_useful_id(next.clone(), save_result.question_id);
         global_data.set_format(next.clone(), save_result.format);
         global_data.set_choices(next.clone(), save_result.answer_choices);
+        global_data
+            .update_from_db(&questions_collection, next.clone())
+            .await?;
+        global_data.filter_choices(next.clone());
     }
 
     /*submit*/
     let last_question_id = global_data.last_question();
+    global_data.select_choices(last_question_id.clone());
     let body = SaveBody::from(
-        global_data.choice(last_question_id.clone()),
+        global_data.chosen_choices(last_question_id.clone()),
         last_question_id.clone(),
     );
     println!("do submit {}", global_data.last_question());
@@ -70,14 +80,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         submit_request(&client, last_question_id.clone(), &global_data, &body).await?;
     println!("score {}", submit_result.score);
 
-    for i in 0..global_data.question_count() {
-        // questions_collection
-        //     .insert_one(global_data.get_question(i).clone(), None)
-        //     .await
-        //     .expect("fail to store");
-        let current = global_data.get_question(i);
-        println!("show result {} => {}", current.temp_id, current.useful_id);
+    if submit_result.score == 0 {
+        global_data.remember_error();
     }
+
+    global_data.store_into_db(&questions_collection).await?;
 
     global_data.clear_question();
 
