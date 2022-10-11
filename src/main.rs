@@ -34,10 +34,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         student_assessment_iteration.questions.iter().for_each(|q| {
             global_data.insert_question(q.student_assessment_question_sys_guid.clone());
         });
-        println!("get {} question", global_data.question_count());
+        println!(
+            "\x1b[30mget {} question\x1b[0m",
+            global_data.question_count()
+        );
 
         /*start*/
-        println!("request question choices");
+        println!("\x1b[30mrequest question choices\x1b[0m");
         let start_result =
             start_request(&client, global_data.first_question(), &global_data).await?;
         global_data.set_useful_id(global_data.first_question(), start_result.question_id);
@@ -53,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let next = global_data.get_question_id(i + 1);
             global_data.select_choices(current.clone());
             let body = SaveBody::from(global_data.chosen_choices(current.clone()), next.clone());
-            println!("send a question answer");
+            println!("\x1b[30msend a question answer\x1b[0m");
             let save_result = save_request(&client, current.clone(), &global_data, &body)
                 .await
                 .expect("fail to get save request response");
@@ -72,7 +75,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             global_data.chosen_choices(last_question_id.clone()),
             last_question_id.clone(),
         );
-        println!("send a question answer");
+        println!("\x1b[30msend a question answer\x1b[0m");
         let submit_result =
             submit_request(&client, last_question_id.clone(), &global_data, &body).await?;
         println!(
@@ -83,10 +86,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         );
 
         if global_data.get_min_correct() == submit_result.questions_correct {
-            println!("try to remember error choices");
+            println!("\x1b[36mtry to remember error choices\x1b[0m");
             global_data.remember_error();
         } else if submit_result.score == 100 {
-            println!("try to remember correct choices");
+            println!("\x1b[36mtry to remember correct choices\x1b[0m");
             global_data.remember_correct();
         }
 
