@@ -21,7 +21,7 @@ async fn base_get(
         let body = res.text().await?;
         Ok(body)
     } else {
-        panic!("request return error")
+        panic!("get request return error {}", res.text().await?)
     }
 }
 
@@ -49,7 +49,7 @@ async fn base_put<T: Serialize>(
         let body = res.text().await?;
         Ok(body)
     } else {
-        panic!("request return error {}", res.text().await?)
+        panic!("put request return error {}", res.text().await?)
     }
 }
 

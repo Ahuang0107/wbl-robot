@@ -33,14 +33,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         global_data.set_student_guid(student_assessment_iteration.student_assessment_sys_guid);
         student_assessment_iteration.questions.iter().for_each(|q| {
             global_data.insert_question(q.student_assessment_question_sys_guid.clone());
-            println!(
-                "iteration {}",
-                q.student_assessment_question_sys_guid.clone()
-            );
         });
+        println!("get {} question", global_data.question_count());
 
         /*start*/
-        println!("do start {}", global_data.first_question());
+        println!("request question choices");
         let start_result =
             start_request(&client, global_data.first_question(), &global_data).await?;
         global_data.set_useful_id(global_data.first_question(), start_result.question_id);
@@ -56,7 +53,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let next = global_data.get_question_id(i + 1);
             global_data.select_choices(current.clone());
             let body = SaveBody::from(global_data.chosen_choices(current.clone()), next.clone());
-            println!("do saveAndNext {}", current.clone());
+            println!("send a question answer");
             let save_result = save_request(&client, current.clone(), &global_data, &body)
                 .await
                 .expect("fail to get save request response");
@@ -75,16 +72,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
             global_data.chosen_choices(last_question_id.clone()),
             last_question_id.clone(),
         );
-        println!("do submit {}", global_data.last_question());
+        println!("send a question answer");
         let submit_result =
             submit_request(&client, last_question_id.clone(), &global_data, &body).await?;
-        println!("correct {}", submit_result.questions_correct);
-        println!("score {}", submit_result.score);
+        println!(
+            "get score({}), correct({}), already know correct({})",
+            submit_result.score,
+            submit_result.questions_correct,
+            global_data.get_min_correct()
+        );
 
         if global_data.get_min_correct() == submit_result.questions_correct {
-            println!("already know correct: {}", global_data.get_min_correct());
+            println!("try to remember error choices");
             global_data.remember_error();
         } else if submit_result.score == 100 {
+            println!("try to remember correct choices");
             global_data.remember_correct();
         }
 
