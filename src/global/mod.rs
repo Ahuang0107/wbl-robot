@@ -126,6 +126,17 @@ impl GlobalData {
             .format = format;
     }
 
+    /// 得到本次答题理论最少能答对的题数，及已经知道答案的题目数量
+    /// 当本次答题答对题数与已知答案的题数相同，则可知其他题目均答错
+    pub fn get_min_correct(&self) -> usize {
+        let mut result: usize = 0;
+        self.questions
+            .iter()
+            .filter(|q| !q.correct_choices.is_empty())
+            .for_each(|_| result += 1);
+        result
+    }
+
     pub fn set_choices(&mut self, temp_id: String, choices: Vec<AnswerChoice>) {
         let question = self
             .questions

@@ -77,6 +77,8 @@ pub struct StartData {
     #[serde(rename = "answerChoices")]
     pub(crate) answer_choices: Vec<AnswerChoice>,
     pub(crate) format: QuestionFormat,
+    // #[serde(rename = "totalPoints")]
+    // pub(crate) total_points: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -184,4 +186,8 @@ impl AnswerChoice {
 #[derive(Serialize, Deserialize)]
 pub struct SubmitData {
     pub(crate) score: usize,
+    // #[serde(rename = "totalPoints")]
+    // pub(crate) total_points: usize,
+    #[serde(rename = "questionsCorrect")]
+    pub(crate) questions_correct: usize,
 }

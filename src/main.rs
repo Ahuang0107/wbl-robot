@@ -78,9 +78,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         println!("do submit {}", global_data.last_question());
         let submit_result =
             submit_request(&client, last_question_id.clone(), &global_data, &body).await?;
+        println!("correct {}", submit_result.questions_correct);
         println!("score {}", submit_result.score);
 
-        if submit_result.score == 0 {
+        if global_data.get_min_correct() == submit_result.questions_correct {
+            println!("already know correct: {}", global_data.get_min_correct());
             global_data.remember_error();
         } else if submit_result.score == 100 {
             global_data.remember_correct();
