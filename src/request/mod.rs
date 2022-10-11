@@ -49,10 +49,7 @@ async fn base_put<T: Serialize>(
         let body = res.text().await?;
         Ok(body)
     } else {
-        panic!(
-            "request return error {}",
-            serde_json::to_string(json.clone()).expect("fail to string json")
-        )
+        panic!("request return error {}", res.text().await?)
     }
 }
 

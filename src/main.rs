@@ -23,70 +23,71 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let client: reqwest::Client = reqwest::Client::new();
 
-    /*iteration*/
-    let iteration_result = iteration_request(&client, &global_data).await?;
-    let student_assessment_iteration = iteration_result
-        .clone()
-        .student_assessment_iteration
-        .expect("unable to get [student_assessment_iteration]");
-    global_data.set_student_guid(student_assessment_iteration.student_assessment_sys_guid);
-    student_assessment_iteration.questions.iter().for_each(|q| {
-        global_data.insert_question(q.student_assessment_question_sys_guid.clone());
-        println!(
-            "iteration {}",
-            q.student_assessment_question_sys_guid.clone()
-        );
-    });
+    loop {
+        /*iteration*/
+        let iteration_result = iteration_request(&client, &global_data).await?;
+        let student_assessment_iteration = iteration_result
+            .clone()
+            .student_assessment_iteration
+            .expect("unable to get [student_assessment_iteration]");
+        global_data.set_student_guid(student_assessment_iteration.student_assessment_sys_guid);
+        student_assessment_iteration.questions.iter().for_each(|q| {
+            global_data.insert_question(q.student_assessment_question_sys_guid.clone());
+            println!(
+                "iteration {}",
+                q.student_assessment_question_sys_guid.clone()
+            );
+        });
 
-    /*start*/
-    println!("do start {}", global_data.first_question());
-    let start_result = start_request(&client, global_data.first_question(), &global_data).await?;
-    global_data.set_useful_id(global_data.first_question(), start_result.question_id);
-    global_data.set_format(global_data.first_question(), start_result.format);
-    global_data.set_choices(global_data.first_question(), start_result.answer_choices);
-    global_data
-        .update_from_db(&questions_collection, global_data.first_question())
-        .await?;
-    global_data.filter_choices(global_data.first_question());
-
-    /*save and next*/
-    for i in 0..global_data.question_count() - 1 {
-        let current = global_data.get_question_id(i);
-        let next = global_data.get_question_id(i + 1);
-        global_data.select_choices(current.clone());
-        let body = SaveBody::from(global_data.chosen_choices(current.clone()), next.clone());
-        println!("do saveAndNext {}", current.clone());
-        let save_result = save_request(&client, current.clone(), &global_data, &body)
-            .await
-            .expect("fail to get save request response");
-        global_data.set_useful_id(next.clone(), save_result.question_id);
-        global_data.set_format(next.clone(), save_result.format);
-        global_data.set_choices(next.clone(), save_result.answer_choices);
+        /*start*/
+        println!("do start {}", global_data.first_question());
+        let start_result =
+            start_request(&client, global_data.first_question(), &global_data).await?;
+        global_data.set_useful_id(global_data.first_question(), start_result.question_id);
+        global_data.set_format(global_data.first_question(), start_result.format);
+        global_data.set_choices(global_data.first_question(), start_result.answer_choices);
         global_data
-            .update_from_db(&questions_collection, next.clone())
+            .update_from_db(&questions_collection, global_data.first_question())
             .await?;
-        global_data.filter_choices(next.clone());
+
+        /*save and next*/
+        for i in 0..global_data.question_count() - 1 {
+            let current = global_data.get_question_id(i);
+            let next = global_data.get_question_id(i + 1);
+            global_data.select_choices(current.clone());
+            let body = SaveBody::from(global_data.chosen_choices(current.clone()), next.clone());
+            println!("do saveAndNext {}", current.clone());
+            let save_result = save_request(&client, current.clone(), &global_data, &body)
+                .await
+                .expect("fail to get save request response");
+            global_data.set_useful_id(next.clone(), save_result.question_id);
+            global_data.set_format(next.clone(), save_result.format);
+            global_data.set_choices(next.clone(), save_result.answer_choices);
+            global_data
+                .update_from_db(&questions_collection, next.clone())
+                .await?;
+        }
+
+        /*submit*/
+        let last_question_id = global_data.last_question();
+        global_data.select_choices(last_question_id.clone());
+        let body = SaveBody::from(
+            global_data.chosen_choices(last_question_id.clone()),
+            last_question_id.clone(),
+        );
+        println!("do submit {}", global_data.last_question());
+        let submit_result =
+            submit_request(&client, last_question_id.clone(), &global_data, &body).await?;
+        println!("score {}", submit_result.score);
+
+        if submit_result.score == 0 {
+            global_data.remember_error();
+        } else if submit_result.score == 100 {
+            global_data.remember_correct();
+        }
+
+        global_data.store_into_db(&questions_collection).await?;
+
+        global_data.clear_question();
     }
-
-    /*submit*/
-    let last_question_id = global_data.last_question();
-    global_data.select_choices(last_question_id.clone());
-    let body = SaveBody::from(
-        global_data.chosen_choices(last_question_id.clone()),
-        last_question_id.clone(),
-    );
-    println!("do submit {}", global_data.last_question());
-    let submit_result =
-        submit_request(&client, last_question_id.clone(), &global_data, &body).await?;
-    println!("score {}", submit_result.score);
-
-    if submit_result.score == 0 {
-        global_data.remember_error();
-    }
-
-    global_data.store_into_db(&questions_collection).await?;
-
-    global_data.clear_question();
-
-    Ok(())
 }

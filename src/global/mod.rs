@@ -1,6 +1,7 @@
 use crate::response::{AnswerChoice, QuestionFormat};
 use mongodb::bson::doc;
 use mongodb::Collection;
+use rand::seq::SliceRandom;
 use rust_demo::{cookies, env_get};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -27,6 +28,33 @@ pub struct MemoryStoreQuestion {
     error_choices: Vec<AnswerChoice>,
     // 本次选择的选项
     chosen_choices: Vec<AnswerChoice>,
+}
+
+impl MemoryStoreQuestion {
+    /// 排除error_choices后剩余的选项
+    #[allow(dead_code)]
+    fn excluded_errors(&self) -> Vec<AnswerChoice> {
+        let errors = self
+            .error_choices
+            .iter()
+            .map(|c| c.choice_value.clone())
+            .collect::<Vec<String>>();
+        let exclude_errors = self
+            .choices
+            .clone()
+            .into_iter()
+            .filter(|q| !errors.contains(&q.choice_value))
+            .collect::<Vec<AnswerChoice>>();
+        exclude_errors
+    }
+    /// 随机从所有choices里返回一个（已经排除error_choices）
+    #[allow(dead_code)]
+    fn random_choice(&self) -> AnswerChoice {
+        self.excluded_errors()
+            .choose(&mut rand::thread_rng())
+            .expect("process error, have not choices left")
+            .clone()
+    }
 }
 
 impl GlobalData {
@@ -133,26 +161,6 @@ impl GlobalData {
         Ok(())
     }
 
-    pub fn filter_choices(&mut self, temp_id: String) {
-        let question = self
-            .questions
-            .iter_mut()
-            .find(|q| q.temp_id == temp_id)
-            .expect("fail to find");
-        if !question.error_choices.is_empty() {
-            let mut error_ids: Vec<String> = Vec::new();
-            question.error_choices.iter().for_each(|q| {
-                error_ids.push(q.choice_value.clone());
-            });
-            question.choices = question
-                .choices
-                .clone()
-                .into_iter()
-                .filter(|q| error_ids.contains(&q.choice_value))
-                .collect::<Vec<AnswerChoice>>();
-        }
-    }
-
     pub fn select_choices(&mut self, temp_id: String) {
         let question = self
             .questions
@@ -165,13 +173,7 @@ impl GlobalData {
             match question.format {
                 QuestionFormat::MultiChoiceSingleAnswer => {
                     question.chosen_choices.clear();
-                    question.chosen_choices.push(
-                        question
-                            .choices
-                            .first()
-                            .expect("have no choices can chose")
-                            .clone(),
-                    );
+                    question.chosen_choices.push(question.random_choice());
                 }
                 QuestionFormat::MultiChoiceMultipleAnswer => {
                     todo!("处理多选题的逻辑")
@@ -221,12 +223,21 @@ impl GlobalData {
                         q.chosen_choices
                             .iter()
                             .for_each(|cq| q.error_choices.push(cq.clone()));
+                        if q.excluded_errors().len() == 1 {
+                            q.correct_choices = q.excluded_errors();
+                        }
                     }
                     QuestionFormat::MultiChoiceMultipleAnswer => {
                         todo!("处理多选题的逻辑")
                     }
                 }
             }
+        });
+    }
+
+    pub fn remember_correct(&mut self) {
+        self.questions.iter_mut().for_each(|q| {
+            q.correct_choices = q.chosen_choices.clone();
         });
     }
 
@@ -249,5 +260,54 @@ impl GlobalData {
             coll.insert_one(current.clone(), None).await?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::response::{AnswerChoice, QuestionFormat};
+    use crate::MemoryStoreQuestion;
+
+    #[test]
+    fn random_choice_test() {
+        let mut question = MemoryStoreQuestion {
+            useful_id: String::from(""),
+            temp_id: String::from(""),
+            format: QuestionFormat::MultiChoiceSingleAnswer,
+            choices: vec![
+                AnswerChoice::from_mock("1"),
+                AnswerChoice::from_mock("2"),
+                AnswerChoice::from_mock("3"),
+                AnswerChoice::from_mock("4"),
+            ],
+            correct_choices: Vec::new(),
+            error_choices: Vec::new(),
+            chosen_choices: Vec::new(),
+        };
+        let random_choice = question.random_choice().choice_value;
+        assert_eq!(
+            random_choice == String::from("1")
+                || random_choice == String::from("2")
+                || random_choice == String::from("3")
+                || random_choice == String::from("4"),
+            true
+        );
+        question.error_choices.push(AnswerChoice::from_mock("1"));
+        let random_choice = question.random_choice().choice_value;
+        assert_eq!(
+            random_choice == String::from("2")
+                || random_choice == String::from("3")
+                || random_choice == String::from("4"),
+            true
+        );
+        question.error_choices.push(AnswerChoice::from_mock("2"));
+        let random_choice = question.random_choice().choice_value;
+        assert_eq!(
+            random_choice == String::from("3") || random_choice == String::from("4"),
+            true
+        );
+        question.error_choices.push(AnswerChoice::from_mock("3"));
+        let random_choice = question.random_choice().choice_value;
+        assert_eq!(random_choice == String::from("4"), true);
     }
 }

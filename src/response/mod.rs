@@ -144,6 +144,42 @@ pub struct AnswerChoice {
     value: Option<String>,
 }
 
+impl AnswerChoice {
+    #[allow(dead_code)]
+    pub(crate) fn from_mock(v: &str) -> AnswerChoice {
+        AnswerChoice {
+            answer_sys_guid: String::from("default mock"),
+            group_number: None,
+            is_archived: None,
+            is_correct: None,
+            is_primary: None,
+            last_update_user: None,
+            last_update_timestamp: None,
+            number: None,
+            question_variant_sys_guid: None,
+            default_image_id: None,
+            answer_i18n_detail_sys_guid: None,
+            choice_value: String::from(v),
+            default_image_file_name: None,
+            default_image_size: None,
+            i18n_detail_last_update_user: None,
+            i18n_detail_last_update_timestamp: None,
+            image_file_name: None,
+            image_size: None,
+            locale_id: None,
+            question_version_sys_guid: None,
+            image_id: None,
+            image_alt_text: None,
+            answer_i18n_sys_guid: None,
+            is_selected: false,
+            order: None,
+            student_assessment_answer_choice_sys_guid: None,
+            student_assessment_question_sys_guid: None,
+            value: None,
+        }
+    }
+}
+
 /// submit 接口返回的数据结构
 #[derive(Serialize, Deserialize)]
 pub struct SubmitData {
