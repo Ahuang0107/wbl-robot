@@ -85,12 +85,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             global_data.get_min_correct()
         );
 
-        if global_data.get_min_correct() == submit_result.questions_correct {
-            println!("\x1b[36mtry to remember error choices\x1b[0m");
-            global_data.remember_error();
-        } else if submit_result.score == 100 {
+        if submit_result.score == 100 {
             println!("\x1b[36mtry to remember correct choices\x1b[0m");
             global_data.remember_correct();
+        } else if global_data.get_min_correct() == submit_result.questions_correct {
+            println!("\x1b[36mtry to remember error choices\x1b[0m");
+            global_data.remember_error();
         }
 
         global_data.store_into_db(&questions_collection).await?;
