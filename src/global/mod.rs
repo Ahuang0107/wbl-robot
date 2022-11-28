@@ -252,6 +252,7 @@ impl GlobalData {
             Some(q) => {
                 question.correct_choices = q.correct_choices;
                 question.error_choices = q.error_choices;
+                question.multiple_error_choices = q.multiple_error_choices;
             }
             None => {}
         }
