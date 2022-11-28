@@ -259,7 +259,7 @@ impl GlobalData {
         Ok(())
     }
 
-    pub fn select_choices(&mut self, temp_id: String) {
+    pub fn select_choices(&mut self, temp_id: String, multiple_target_error: bool) {
         let question = self
             .questions
             .iter_mut()
@@ -274,7 +274,12 @@ impl GlobalData {
                     question.chosen_choices.push(question.random_choice());
                 }
                 QuestionFormat::MultiChoiceMultipleAnswer => {
-                    question.chosen_choices = question.random_choices();
+                    if multiple_target_error && !question.multiple_error_choices.is_empty() {
+                        question.chosen_choices =
+                            question.multiple_error_choices.first().unwrap().clone()
+                    } else {
+                        question.chosen_choices = question.random_choices();
+                    }
                 }
             }
         }
@@ -327,7 +332,15 @@ impl GlobalData {
                         }
                     }
                     QuestionFormat::MultiChoiceMultipleAnswer => {
-                        q.multiple_error_choices.push(q.chosen_choices.clone());
+                        let mut need_update = true;
+                        q.multiple_error_choices.iter().for_each(|m| {
+                            if compare_multiple_choices(m, &q.chosen_choices) {
+                                need_update = false
+                            }
+                        });
+                        if need_update {
+                            q.multiple_error_choices.push(q.chosen_choices.clone());
+                        }
                     }
                 }
             }

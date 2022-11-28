@@ -1,14 +1,16 @@
-mod global;
-mod request;
-mod response;
-mod url;
+use std::error::Error;
+
+use mongodb::{options::ClientOptions, Client};
 
 use crate::global::{GlobalData, MemoryStoreQuestion};
 use crate::request::{iteration_request, save_request, start_request, submit_request, SaveBody};
 use crate::response::{CustomResponse, IterationData, StartData};
 use crate::url::{iteration_url, start_url};
-use mongodb::{options::ClientOptions, Client};
-use std::error::Error;
+
+mod global;
+mod request;
+mod response;
+mod url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -54,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         for i in 0..global_data.question_count() - 1 {
             let current = global_data.get_question_id(i);
             let next = global_data.get_question_id(i + 1);
-            global_data.select_choices(current.clone());
+            global_data.select_choices(current.clone(), true);
             let body = SaveBody::from(global_data.chosen_choices(current.clone()), next.clone());
             println!("\x1b[30msend a question answer\x1b[0m");
             let save_result = save_request(&client, current.clone(), &global_data, &body)
@@ -70,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         /*submit*/
         let last_question_id = global_data.last_question();
-        global_data.select_choices(last_question_id.clone());
+        global_data.select_choices(last_question_id.clone(), false);
         let body = SaveBody::from(
             global_data.chosen_choices(last_question_id.clone()),
             last_question_id.clone(),
